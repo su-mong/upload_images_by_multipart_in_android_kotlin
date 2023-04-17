@@ -1,3 +1,8 @@
 package com.example.gallery_multipart.data
 
-data class ImageModel(val imageUrl: String?)
+import android.net.Uri
+
+data class ImageModel(
+    var imageUrl: Uri? = null,
+    var name: String = "nothing!",
+)

@@ -1,57 +1,47 @@
 package com.example.gallery_multipart
 
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.viewModels
+import com.example.gallery_multipart.base.BindingActivity
 import com.example.gallery_multipart.data.ImageModel
+import com.example.gallery_multipart.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BindingActivity<ActivityMainBinding>(R.layout.activity_main) {
+    private lateinit var rvAdapter: MainListAdapter
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        // petRegisterViewModel.getPets()
+        initAdapter()
+        clickEvents()
+        // clickBack()
+        initPets()
 
-        val originList: ArrayList<ImageModel> = ArrayList()
-        originList.add(ImageModel(null))
-        originList.add(ImageModel(null))
-        originList.add(ImageModel(null))
-        originList.add(ImageModel(null))
-        originList.add(ImageModel(null))
-
-        val listAdapter = MainListAdapter(this, originList)
-        this.findViewById<ListView>(R.id.lvImage).adapter = listAdapter
-    }
-}
-
-class MainListAdapter(val context: Context, val list: ArrayList<ImageModel>): BaseAdapter() {
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        /* LayoutInflater는 item을 Adapter에서 사용할 View로 부풀려주는(inflate) 역할을 한다. */
-        val view: View = LayoutInflater.from(context).inflate(R.layout.row_image_list_view, null)
-
-        /* 위에서 생성된 view를 res-layout-main_lv_item.xml 파일의 각 View와 연결하는 과정이다. */
-        val rowImage = view.findViewById<ImageView>(R.id.rowImage)
-        val rowTvImageName = view.findViewById<TextView>(R.id.rowTvImageName)
-        val rowBtnSelectImage = view.findViewById<Button>(R.id.rowBtnSelectImage)
-
-        /* ArrayList<Dog>의 변수 dog의 이미지와 데이터를 ImageView와 TextView에 담는다. */
-        val model = list[position]
-        rowTvImageName.text = model.imageUrl
-
-        return view
+        rvAdapter.addNewForm()
     }
 
-    override fun getCount(): Int {
-        return list.size;
+    private fun initAdapter() {
+        rvAdapter = MainListAdapter(this)
+        binding.rvImage.adapter = rvAdapter
+        binding.rvImage.setHasFixedSize(true)
     }
 
-    override fun getItem(position: Int): Any {
-        return list[position]
+    private fun initPets() {
+        viewModel.pets.observe(this) {
+            rvAdapter.setRegisteredPetlist(it)
+        }
     }
 
-    override fun getItemId(position: Int): Long {
-        return position.toLong()
+    private fun clickEvents() {
+        binding.btnAddRow.setOnClickListener {
+            rvAdapter.addNewForm()
+        }
     }
 }
