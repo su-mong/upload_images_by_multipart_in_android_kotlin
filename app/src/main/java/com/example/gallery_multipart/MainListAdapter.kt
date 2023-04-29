@@ -9,34 +9,35 @@ import android.widget.ImageView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.example.gallery_multipart.data.ImageModel
 import com.example.gallery_multipart.databinding.RowImageListViewBinding
 
-class MainListAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), MypagePetRegisterFormListener {
-    var petRegisterList = mutableListOf<ImageModel>()
-    val getContent = ((context as AppCompatActivity).registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        getImage(uri, 0)
-    })
-
+class MainListAdapter(var petRegisterList: LiveData<ArrayList<ImageModel>>) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), MypagePetRegisterFormListener {
     /// MainListAdapter의 요소에 접근 가능하도록 하기 위해 inner class로 변경
     inner class MainListViewHolder(
         private val binding: RowImageListViewBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
         fun onBind(data: ImageModel, cancel: (Int) -> Unit) {
+            binding.position = position;
+
             binding.apply {
                 this.position = position
                 listener = this@MainListAdapter
+                //binding.rowImage.setOnClickListener {
+                    //getContent.launch("image/*")
+                //}
                 binding.rowImage.setOnClickListener {
-                    getContent.launch("image/*")
+                    onItemClickListener?.let {
+                        it(position ?: 0)
+                    }
                 }
                 binding.rowImage.load(
                     data.imageUrl ?: R.drawable.ic_launcher_foreground
                 )
                 binding.rowTvImageName.text = data.name
-
-                Log.d("getCCC", "" + data.imageUrl?.path)
             }
         }
     }
@@ -53,7 +54,7 @@ class MainListAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if(holder is MainListViewHolder) {
-            holder.onBind(petRegisterList[position]) { onCancel(it) }
+            holder.onBind(petRegisterList.value!![position]) { onCancel(it) }
         }
     }
 
@@ -62,41 +63,35 @@ class MainListAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.
     }
 
     override fun getItemCount(): Int {
-        if (petRegisterList.size == 4) {
-            return petRegisterList.size
-        }
-        return petRegisterList.size + 1
+        return petRegisterList.value!!.size
     }
 
-
-
-    fun setRegisteredPetlist(pet: List<ImageModel>) {
-        petRegisterList.removeAll(pet)
-        petRegisterList.addAll(pet)
-        notifyDataSetChanged()
-    }
-
-    fun addNewForm() {
-        if (petRegisterList.size == 4) return
-        petRegisterList.add(ImageModel())
-        Log.d("getCCC", (petRegisterList.size).toString())
-        notifyDataSetChanged()
-    }
 
     override fun onCancel(position: Int) {
         removePetRegisterForm(position)
     }
 
+
+
     private fun removePetRegisterForm(position: Int) {
-        val countToRegisterViewHolder = petRegisterList.size
+        val countToRegisterViewHolder = petRegisterList.value!!.size
         if (countToRegisterViewHolder == 0) return
-        petRegisterList.removeAt(position)
+        petRegisterList.value!!.removeAt(position)
         notifyDataSetChanged()
     }
 
     private fun getImage(uri: Uri?, position: Int) {
-        petRegisterList[position].imageUrl = uri
-        petRegisterList[position].name = uri?.path ?: ("Image$position")
+        petRegisterList.value!![position].imageUrl = uri
+        petRegisterList.value!![position].name = uri?.path ?: ("Image$position")
         notifyDataSetChanged()
+    }
+
+
+
+
+    /// https://developer88.tistory.com/356
+    private var onItemClickListener: ((Int) -> Unit)? = null
+    fun setOnItemClickListener(listener: (Int) -> Unit) {
+        onItemClickListener = listener
     }
 }
